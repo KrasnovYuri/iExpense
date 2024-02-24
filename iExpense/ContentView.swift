@@ -4,18 +4,75 @@
 //
 //  Created by Юрий on 23.02.2024.
 //
-
 import SwiftUI
 
-struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+struct ExpenseItem: Identifiable, Codable {
+    var id = UUID()
+    let name: String
+    let type: String
+    let amount: Double
+}
+
+@Observable
+class Expenses {
+    var items = [ExpenseItem]() {
+        didSet {
+            if let encoder = try? JSONEncoder().encode(items) {
+                UserDefaults.standard.set(encoder, forKey: "Items")
+            }
         }
-        .padding()
+    }
+    
+    init() {
+        if let savedItems = UserDefaults.standard.data(forKey: "Items"){
+            if let decodedItems = try? JSONDecoder().decode([ExpenseItem].self, from: savedItems) {
+                items = decodedItems
+                return
+            }
+        }
+        
+        items = [] 
+    }
+}
+
+struct ContentView: View {
+    @State private var expenses = Expenses()
+    @State private var showingAddExpense = false
+    @State private var selectedCurrency = "USD"
+
+    var body: some View {
+        NavigationStack {
+            List {
+                ForEach(expenses.items) { item in
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text(item.name)
+                                .font(.headline)
+                            
+                            Text(item.type)
+                        }
+                        
+                        Spacer()
+                        
+                        Text(item.amount, format: .currency(code: selectedCurrency))
+                    }
+                }
+                .onDelete(perform: removeItems)
+            }
+            .navigationTitle("iExpense")
+            .toolbar {
+                Button("Add Expense", systemImage: "plus") {
+                    showingAddExpense = true
+                }
+            }
+            .sheet(isPresented: $showingAddExpense) {
+                AddView(currencyCode: $selectedCurrency, expenses: expenses)
+            }
+        }
+        
+    }
+    func removeItems(at offsets: IndexSet) {
+        expenses.items.remove(atOffsets: offsets)
     }
 }
 
