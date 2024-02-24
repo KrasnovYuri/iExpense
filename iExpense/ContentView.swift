@@ -37,8 +37,8 @@ class Expenses {
 
 struct ContentView: View {
     @State private var expenses = Expenses()
-    
     @State private var showingAddExpense = false
+    @State private var selectedCurrency = "USD"
 
     var body: some View {
         NavigationStack {
@@ -54,7 +54,7 @@ struct ContentView: View {
                         
                         Spacer()
                         
-                        Text(item.amount, format: .currency(code: "USD"))
+                        Text(item.amount, format: .currency(code: selectedCurrency))
                     }
                 }
                 .onDelete(perform: removeItems)
@@ -66,7 +66,7 @@ struct ContentView: View {
                 }
             }
             .sheet(isPresented: $showingAddExpense) {
-                AddView(expenses: expenses)
+                AddView(currencyCode: $selectedCurrency, expenses: expenses)
             }
         }
         
